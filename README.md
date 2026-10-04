@@ -17,6 +17,8 @@ It's for times like these:
 - Leaving a long job running and closing the lid to carry the laptop to
   another room.
 - Reaching the laptop over SSH, or a remote coding session, with the lid shut.
+- Keeping a cat off the keyboard. A remote session keeps working while the
+  laptop sits closed, so the cat can't walk across the keys and type into it.
 - Keeping a laptop on the desk as a small server without a monitor attached.
 
 With an external monitor connected, Omarchy already keeps the laptop running
