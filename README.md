@@ -50,8 +50,10 @@ lid. Turning it off stops the unit and releases the inhibitor.
   without a password, so the plugin never touches system files.
 - **It resets on reboot.** A laptop can't be left stuck awake in a bag
   forever by accident.
-- **It works from a terminal too.** The icon notices changes within a few
-  seconds:
+- **It recovers on its own.** If something kills the unit's helper process,
+  systemd restarts it a second later and the lid is held again.
+- **It works from a terminal too.** The icon follows the unit's journal, so it
+  updates the moment the unit starts or stops, however that happens:
 
   ```bash
   systemctl --user stop lid-awake        # turn it off
@@ -63,6 +65,9 @@ lid. Turning it off stops the unit and releases the inhibitor.
 - A closed laptop that's still running can get warm. Don't leave it in a bag
   while it's working hard.
 - It runs on battery until the battery is flat. Plug in for long sessions.
+  The version proposed for Omarchy itself
+  ([omacom/omarchy#14273](https://github.com/omacom/omarchy/pull/14273))
+  adds a battery floor that turns Lid Awake off at 10%.
 
 ## License
 

@@ -12,9 +12,16 @@ BarWidget {
 
   readonly property string unitName: "lid-awake"
   property bool lidAwake: false
+  property bool refreshPending: false
 
   function refresh() {
-    if (!statusProc.running && !switchProc.running) statusProc.running = true
+    // A check already running may have sampled the unit before a change, so
+    // run one more after it rather than dropping this request.
+    if (statusProc.running || switchProc.running) {
+      root.refreshPending = true
+      return
+    }
+    statusProc.running = true
   }
 
   function toggle() {
@@ -22,6 +29,7 @@ BarWidget {
     switchProc.command = root.lidAwake
       ? ["systemctl", "--user", "stop", root.unitName]
       : ["systemd-run", "--user", "--collect", "--quiet", "--unit=" + root.unitName,
+         "--property=Restart=on-failure", "--property=RestartSec=1",
          "systemd-inhibit", "--what=handle-lid-switch", "--mode=block",
          "--who=Lid Awake", "--why=Stay running with the lid closed",
          "sleep", "infinity"]
@@ -34,7 +42,13 @@ BarWidget {
   Process {
     id: statusProc
     command: ["systemctl", "--user", "--quiet", "is-active", root.unitName]
-    onExited: function(exitCode) { root.lidAwake = exitCode === 0 }
+    onExited: function(exitCode) {
+      root.lidAwake = exitCode === 0
+      if (root.refreshPending) {
+        root.refreshPending = false
+        root.refresh()
+      }
+    }
   }
 
   Process {
@@ -42,13 +56,31 @@ BarWidget {
     onExited: root.refresh()
   }
 
-  // Picks up changes made outside the widget, like `systemctl --user stop`.
-  Timer {
-    interval: 5000
+  Component.onCompleted: refresh()
+
+  // The unit can fail, restart, or stop outside the widget, for example with
+  // `systemctl --user stop`. Its journal logs every change, so follow it rather
+  // than poll: lines wait in the pipe while the shell is busy, so none is
+  // missed. pdeathsig stops the follower if the shell dies without cleaning up.
+  Process {
+    id: unitFollower
     running: true
-    repeat: true
-    triggeredOnStart: true
-    onTriggered: root.refresh()
+    command: ["setpriv", "--pdeathsig", "TERM", "journalctl", "--user", "--follow", "--lines=0", "--output=cat", "--unit=" + root.unitName]
+    stdout: SplitParser {
+      onRead: root.refresh()
+    }
+    onExited: followerRestart.start()
+  }
+
+  // Changes logged while the follower was down are not replayed, so check the
+  // unit again once it is back.
+  Timer {
+    id: followerRestart
+    interval: 5000
+    onTriggered: {
+      unitFollower.running = true
+      root.refresh()
+    }
   }
 
   BarIconButton {
