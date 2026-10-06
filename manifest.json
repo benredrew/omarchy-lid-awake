@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "id": "benredrew.lid-awake",
   "name": "Lid Awake",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "benredrew",
-  "description": "Keep a laptop running with the lid closed: it locks and the screen goes dark, but nothing suspends",
+  "description": "Keep a laptop running with the lid closed: it locks and the screen goes dark, but nothing suspends until the battery reaches 10%",
   "kinds": ["bar-widget"],
   "entryPoints": { "barWidget": "BarWidget.qml" },
   "barWidget": {
